@@ -51,7 +51,7 @@ class Scraper:
                 self.data[self.article_count] = [date, authors, issues, title, organization, link]
                 self.article_count += 1
         except Exception as e:
-            raise e
+            print(f"Failed for {link} on {date}. Skipping page {self.page_count}")
 
     def has_next_page(self) -> bool:
         self.page.wait_for_selector('xpath=/html/body/main/div/div[3]/div[2]/div/ul/li[3]')
@@ -106,7 +106,8 @@ class Scraper:
 
     def run(self):
         try:
-            self.page.goto('https://www.fdd.org/category/in_the_news/')
+            # self.page.goto('https://www.fdd.org/category/in_the_news/')
+            self.page.goto('https://www.fdd.org/category/in_the_news/?monthnum=5')
             # self.set_items_to_20
 
             self.scrape_page
