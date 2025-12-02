@@ -23,24 +23,32 @@ class Scraper:
 
     def scrape_page(self):
         try:
-            self.page.wait_for_selector('xpath=/html/body/main/div/div[3]/div[2]/a[1]/article/div[2]/div[2]/h6')
             article_elements = self.page.locator('xpath=/html/body/main/div/div[3]/div[2]/a').all()
             
             for article_element in article_elements:
                 link = article_element.get_attribute('href')
-                
-                date_author_issues_element = article_element.locator('xpath=/article/div[2]/div[1]/*').all()
+
+                article_element = article_element.locator('xpath=/article/div').all()[-1]
+                article_element.locator('xpath=/div[2]/h6').wait_for()
+                               
+                date_author_issues_element = article_element.locator('xpath=/div[1]/*').all()
                 date = datetime.strptime(date_author_issues_element[0].inner_text(), '%B %d, %Y')
-                author = date_author_issues_element[2].inner_text()
+
+                authors = []
+                while len(date_author_issues_element[2+len(authors)].locator('xpath=/span').all()) > 1:
+                    authors.append(date_author_issues_element[2+len(authors)].locator('xpath=/span').all()[0].inner_text())
+                authors.append(date_author_issues_element[2+len(authors)].inner_text())
 
                 issues = []
-                for issue_element in date_author_issues_element[4:]:
-                    issues.append(issue_element.inner_text().split(',')[0].strip())
+                if len(date_author_issues_element) > 2+len(authors):
+                    while len(date_author_issues_element[3+len(authors)+len(issues)].locator('xpath=/span').all()) > 1:
+                        issues.append(date_author_issues_element[3+len(authors)+len(issues)].locator('xpath=/span').all()[0].inner_text())
+                    issues.append(date_author_issues_element[3+len(authors)+len(issues)].inner_text())
 
-                title = article_element.locator('xpath=/article/div[2]/h4').inner_text()
-                organization = article_element.locator('xpath=/article/div[2]/div[2]').inner_text()
+                title = article_element.locator('xpath=/h4').inner_text()
+                organization = article_element.locator('xpath=/div[2]').inner_text()
 
-                self.data[self.article_count] = [date, author, issues, title, organization, link]
+                self.data[self.article_count] = [date, authors, issues, title, organization, link]
                 self.article_count += 1
         except Exception as e:
             raise e
@@ -102,9 +110,9 @@ class Scraper:
             # self.set_items_to_20
 
             self.scrape_page
-            i = 0
-            while(i < 10):
-                i += 1
+            # i = 0
+            while(self.has_next_page()):
+                # i += 1
                 self.next_page()
                 self.scrape_page()
         except Exception as e:
